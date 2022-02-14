@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GoalSensor : MonoBehaviour
 {
@@ -9,6 +11,9 @@ public class GoalSensor : MonoBehaviour
     private static int rightPoints = 0;
 
     public static int lastScored = 0;
+
+    // For manipulating Text gameObject
+    public TextMeshProUGUI scoreText;
     
     // Start is called before the first frame update
     void Start()
@@ -19,27 +24,39 @@ public class GoalSensor : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
     
     void OnTriggerEnter(Collider collider)
     {
         // When ball enters a goal
-        // Debug.Log("Collider " + collider.name + " Entered goal " + this.name);
         // If Right scores on Left
         if (this.name == "L_Goal")
         {
             rightPoints++;
             lastScored = 1;
-            Debug.Log("Right Paddle scored!");
-            Debug.Log("Current Score - Left Paddle: " + leftPoints + " Right Paddle: " + rightPoints);
+            // If Left is ahead
+            if (leftPoints > rightPoints)
+            {
+                // Update Text Mesh Pro GUI based on the score 
+                scoreText.text = "<color=green>" + leftPoints + "</color>   <color=red>" + rightPoints + "</color>";
+            }
+            // If Right is ahead
+            else if(rightPoints > leftPoints) {
+                // Update Text Mesh Pro GUI based on the score 
+                scoreText.text = "<color=red>" + leftPoints + "</color>   <color=green>" + rightPoints + "</color>";
+            }
+            // If tied
+            else {
+                // Update Text Mesh Pro GUI based on the score 
+                scoreText.text = "<color=yellow>" + leftPoints + "</color>   <color=yellow>" + rightPoints + "</color>";
+            }
             // If it was game point
             if (rightPoints == pointsToWin)
             {
-                Debug.Log("Game Over");
-                Debug.Log("Final Score - Left Paddle: " + leftPoints + " Right Paddle: " + rightPoints);
-                Debug.Log("Right Paddle Wins!");
-                // gameStarted = false;
+                // Update Text Mesh Pro GUI based on the score 
+                scoreText.text = "<color=red>" + leftPoints + "</color>   <color=green>" + rightPoints + "</color><br>" +
+                    "<color=green>Right Paddle Wins!</color>";
                 rightPoints = 0;
                 leftPoints = 0;
             }
@@ -51,20 +68,38 @@ public class GoalSensor : MonoBehaviour
         {
             leftPoints++;
             lastScored = 0;
-            Debug.Log("Left Paddle scored!");
-            Debug.Log("Current Score - Left Paddle: " + leftPoints + " Right Paddle: " + rightPoints);
+            // If Left is ahead
+            if (leftPoints > rightPoints)
+            {
+                // Update Text Mesh Pro GUI based on the score 
+                scoreText.text = "<color=green>" + leftPoints + "</color>   <color=red>" + rightPoints + "</color>";
+            }
+            // If Right is ahead
+            else if (rightPoints > leftPoints)
+            {
+                // Update Text Mesh Pro GUI based on the score 
+                scoreText.text = "<color=red>" + leftPoints + "</color>   <color=green>" + rightPoints + "</color>";
+            }
+            // If tied
+            else
+            {
+                // Update Text Mesh Pro GUI based on the score 
+                scoreText.text = "<color=yellow>" + leftPoints + "</color>   <color=yellow>" + rightPoints + "</color>";
+            }
+
             // If it was game point
             if (leftPoints == pointsToWin)
             {
-                Debug.Log("Game Over");
-                Debug.Log("Final Score - Left Paddle: " + leftPoints + " Right Paddle: " + rightPoints);
-                Debug.Log("Left Paddle Wins!");
-                // gameStarted = false;
+                scoreText.text = "<color=green>" + leftPoints + "</color>   <color=red>" + rightPoints + "</color><br>" +
+                    "<color=green>Left Paddle Wins!</color>";
+
                 rightPoints = 0;
                 leftPoints = 0;
             }
 			BallSpawn.gameStart = false;
         }
+        Mover.ballSpeed = 10f;
         Destroy(collider.gameObject);
+        Mover.source.pitch = 1F;
     }
 }

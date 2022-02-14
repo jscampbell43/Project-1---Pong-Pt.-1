@@ -5,12 +5,21 @@ using UnityEngine;
 public class Mover : MonoBehaviour
 {
     public float movementPerSecond = 1f;
+    // Audio clip is the variable type for any digital audio file
+    public AudioClip ballPaddleSound;
 
-    public int ballSpeed = 10;
+    public static float ballSpeed = 10f;
+    // Remember to Add Component -> Audio Source to game object with this script
+    // Made public so that Goal Sensor can reset the pitch
+    public static AudioSource source;
+
+    private Vector3 scaleChange;
+
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
-        //Debug.Log("My Name is " + gameObject.name);
+        // Requirement 1 Get audio source component 
+        source = GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -27,8 +36,26 @@ public class Mover : MonoBehaviour
 
             // Add force to rigid body for movement
             Vector3 force = Vector3.right * movementAxis * movementPerSecond * Time.deltaTime;
-            rbody.AddForce(force, ForceMode.VelocityChange);
+            rbody.AddForce(force, ForceMode.Impulse);
             //transform.position += Vector3.right * movementAxis * movementPerSecond * Time.deltaTime;
+            
+            // Power Up 2 Paddle Size Change
+            if (PowerUps.leftPowerUp2)
+            {
+                // Left grows in Size
+                Transform transform = GetComponent<Transform>();
+                scaleChange = new Vector3(10, 1, 1);
+                transform.localScale = scaleChange;
+                Invoke("resetPaddle", 10f);
+            }
+            else if (PowerUps.rightPowerUp2)
+            {
+                // Left Shrinks in Size
+                Transform transform = GetComponent<Transform>();
+                scaleChange = new Vector3(2, 1, 1);
+                transform.localScale = scaleChange;
+                Invoke("resetPaddle", 10f);
+            }
         }
         else if (gameObject.name == "R_Paddle")
         {
@@ -42,40 +69,50 @@ public class Mover : MonoBehaviour
             // Add force to rigid body for movement
             Vector3 force = Vector3.right * movementAxis_2 * movementPerSecond * Time.deltaTime;
             rbody.AddForce(force, ForceMode.Impulse);
+            
+            // Power Up 2 Paddle Size Change
+            if (PowerUps.leftPowerUp2)
+            {
+                // Right Shrinks in Size
+                Transform transform = GetComponent<Transform>();
+                scaleChange = new Vector3(2, 1, 1);
+                transform.localScale = scaleChange;
+                Invoke("resetPaddle", 10f);
+            }
+            else if (PowerUps.rightPowerUp2)
+            {
+                // Right grows in Size
+                Transform transform = GetComponent<Transform>();
+                scaleChange = new Vector3(10, 1, 1);
+                transform.localScale = scaleChange;
+                Invoke("resetPaddle", 10f);
+            }
         }
-        // Hardcoded way for Up/Down movement of Paddle
-        // When A is pressed
-        // if (Input.GetKey(KeyCode.A))
-        // {
-        //     Transform transform = GetComponent<Transform>();
-        //     transform.position += -Vector3.right * movementPerSecond * Time.deltaTime;
-        // }
-        // // When D is pressed
-        // if (Input.GetKey(KeyCode.D))
-        // {
-        //     Transform transform = GetComponent<Transform>();
-        //     transform.position += Vector3.right * movementPerSecond * Time.deltaTime;
-        // }
+    }
+
+    void resetPaddle()
+    {
+        Transform transform = GetComponent<Transform>();
+        scaleChange = new Vector3(5, 1, 1);
+        transform.localScale = scaleChange;
+        PowerUps.rightPowerUp2 = false;
+        PowerUps.leftPowerUp2 = false;
     }
 
     private void OnCollisionEnter(Collision collision)
     {
+        //AudioSource source = GetComponent<AudioSource>();
+        source.clip = ballPaddleSound;
         if (collision.gameObject.name == "Ball(Clone)")
         {
             if (gameObject.name == "L_Paddle")
             {
-                // Debug.Log("Mover Name: " + gameObject.name);
                 BoxCollider bbox = GetComponent<BoxCollider>();
                 // Determining where center of bbox is
                 float xCenter = bbox.bounds.center.x;
-                // Debug.Log(gameObject.name + " Mover collided with " + collision.gameObject.name);
-                // Debug.Log(gameObject.name + " Center at " + xCenter + ". Ball at " + collision.transform.position.x);
-                // Debug.Log("Size of Paddle" + bbox.size);
 
                 // Not a great magical number(1/2 of paddle X size in scale) but I need to figure out how to get Size of Collider right now it is just (1,1,1)
                 float anglePercentage = (xCenter - collision.transform.position.x) / 2.5f;
-                // Debug.Log("Percentage:" + anglePercentage);
-                // Debug.Log("Percentage of 45 degrees " + anglePercentage * 45f);
 
                 // To determine angle of reflection for ball
                 // Rotation
@@ -83,43 +120,36 @@ public class Mover : MonoBehaviour
                 Debug.DrawLine(transform.position, transform.position + newVector * 30f, Color.red);
                 Rigidbody rbody = collision.gameObject.GetComponent<Rigidbody>();
                 ballSpeed++;
-                // Debug.Log("Ball speed:" + ballSpeed);
+                // Requirement 1 Increase ball pitch with every paddle strike (using input ballSpeed)
+                source.pitch = ballSpeed / 10f;
                 rbody.velocity = newVector * ballSpeed;
-                // Debug.Break();
+                // Debug.Break(); // Pause Game here
+                PowerUps.leftWasLast = true;
             }
             else if (gameObject.name == "R_Paddle")
             {
-                // Debug.Log("Mover Name: " + gameObject.name);
                 BoxCollider bbox = GetComponent<BoxCollider>();
                 // Determining where center of bbox is
                 float xCenter = bbox.bounds.center.x;
-                // Debug.Log(gameObject.name + " Mover collided with " + collision.gameObject.name);
-                // Debug.Log(gameObject.name + " Center at " + xCenter + ". Ball at " + collision.transform.position.x);
-                //Debug.Log("Size of Paddle" + bbox.size);
                 // Not a great magical number(1/2 of paddle X size in scale) but I need to figure out how to get Size of Collider right now it is just (1,1,1)
                 float anglePercentage = (xCenter - collision.transform.position.x) / 2.5f;
-                // Debug.Log("Percentage:" + anglePercentage);
-                // Debug.Log("Percentage of 45 degrees " + anglePercentage * 45f);
 
                 // To determine angle of reflection for ball
                 // Rotation
-
                 Vector3 newVector = Quaternion.Euler(0f, -anglePercentage * 45f, 0f) * Vector3.forward;
                 Debug.DrawLine(transform.position, transform.position + newVector * 30f, Color.red);
                 Rigidbody rbody = collision.gameObject.GetComponent<Rigidbody>();
                 ballSpeed++;
-                // Debug.Log("Ball speed:" + ballSpeed);
+                // Requirement 1 Increase ball pitch with every paddle strike (using input ballSpeed)
+                source.pitch = ballSpeed/10f;
                 rbody.velocity = newVector * ballSpeed;
-                //Debug.Break();
+                //Debug.Break(); // Pause Game here
+                PowerUps.leftWasLast = false;
             }
+            // Play sound on ball/paddle collision
+            //source.PlayOneShot(ballPaddleSound, 1F); // alternate method with volume control parameter
+            source.Play();
         }
-        //rbody.AddForce(newVector, ForceMode.Impulse);
-        //Debug.Break();
-
-        // Rigidbody rbody = instance.GetComponent<Rigidbody>();
-        // float dirX = 10f;
-        // float dirY = 0f;
-        // float dirZ = 10f;
-        // rbody.AddForce(dirX, dirY, dirZ, ForceMode.Impulse);
+        // Play sound on ball/wall collision
     }
 }
